@@ -14,28 +14,34 @@
       <!--svg -->
       <li
         class="z-20 fixed top-0 right-[-1px] h-4 px-1 flex items-center bg-white shadow-l-white"
+        @click="onShowModal"
       >
         <m-svg-icon class="w-1.5 h-1.5" name="hamburger"></m-svg-icon>
       </li>
 
       <!-- category item -->
       <li
-        v-for="item in data"
+        v-for="(item, i) in data"
         :key="item.id"
         class="shrink-0 px-1.5 py-0.5 z-10 duration-200 last:mr-4"
+        :class="{ 'text-zinc-100': curItemIndex === i }"
         :ref="setItemRef"
+        @click="onItemClick(i)"
       >
         {{ item.name }}
       </li>
     </ul>
-    <div>{{ ulScrollLeft }}</div>
+    <m-popup v-model="isVisable">
+      <Menu :categorys="data" @onItemClick="(i) => onItemClick(i)" />
+    </m-popup>
   </div>
 </template>
 
 <script setup>
-// import { useScroll } from '@vueuse/core'
 import { useScroll } from '@vueuse/core'
-import { onBeforeUpdate, ref } from 'vue'
+import { onBeforeUpdate, ref, watch } from 'vue'
+import Menu from '@/views/main/components/menu/index.vue'
+
 defineProps({
   data: {
     type: Array,
@@ -46,9 +52,10 @@ defineProps({
 
 const sliderStyle = ref({
   transform: 'translateX(0px)',
-  width: '60px'
+  width: '52px'
 })
 
+let curItemIndex = ref(0)
 //获取所有滚动的item
 let itemRefs = []
 const setItemRef = (el) => {
@@ -64,6 +71,29 @@ onBeforeUpdate(() => {
 
 const ulTarget = ref(null)
 const { x: ulScrollLeft } = useScroll(ulTarget)
+
+//监听点击元素的下标
+watch(curItemIndex, (val) => {
+  const { left, width } = itemRefs[val].getBoundingClientRect()
+  sliderStyle.value = {
+    //当前元素位置 = ul scrollLeft + li 距左偏移量 - 10 padding
+    transform: `translateX(${ulScrollLeft.value + left - 10}px)`,
+    width: width + 'px'
+  }
+  console.log('val---', val)
+})
+
+//点击item
+const onItemClick = (index) => {
+  curItemIndex.value = index
+  isVisable.value = false
+}
+
+//控制popup
+const isVisable = ref(false)
+const onShowModal = () => {
+  isVisable.value = true
+}
 </script>
 
 <style></style>
